@@ -1,110 +1,112 @@
-# <p align="center">Création de rapport de Veilles</p>
+# Veille IA Médicale
 
-## Description
+Système de veille automatisé couvrant la littérature scientifique,
+le marché concurrentiel, les marchés publics et la réglementation
+dans le domaine de l'IA médicale.
 
-Ce projet est une plateforme de veille technologique, concurrentielle et marchés publics pour les tumeurs cérébrales en imagerie médicale. 
-Le système utilise l’IA locale (GPT4All) pour résumer automatiquement les publications et générer un rapport PDF hebdomadaire. 
-Les alertes sont envoyées par email et Slack, et le tout est planifié automatiquement chaque semaine.
+---
 
-## Fonctionnalités principales
+## Arborescence
 
-- TechWatch : veille sur PubMed (brain tumor, MRI) avec résumé automatique via GPT4All
-- MarketWatch : suivi des concurrents et startups dans le domaine de l’IA médicale
-- PublicWatch : veille sur les appels d’offres et marchés publics liés à l’imagerie médicale
-- Rapports PDF : génération d’un rapport PDF complet et sauvegarde dans `historique_reports/`
-- Alertes : envoi automatique du PDF par email et Slack
-- Scheduler hebdomadaire : exécution chaque lundi à 9h
-
-## 📁 Structure du projet
-```bash
-├─ veille.py             # Script principal
-├─ requirements.txt      # Packages Python requis
-├─ README.md             # Documentation complète
-├─ .gitignore            # Fichiers à ignorer
-├─ .env.example          # Exemple de fichier .env
-├─ historique_reports/   # Rapports PDF générés (non versionnés)
-````
-
-## 🚀 Installation
-
-### 1. Cloner le projet :
-```bash
-git clone <url-du-repo>
-cd Veille
+```
+veille_ia_medicale/
+│
+├── main.py                         # Point d'entrée — orchestrateur + scheduler
+├── requirements.txt
+├── .env.example                    # Template de configuration
+│
+├── config/                         # Constantes & configuration des sources
+│   ├── __init__.py
+│   └── sources.py                  # URLs RSS, mots-clés, palettes couleurs
+│
+├── src/                            # Code source
+│   ├── __init__.py
+│   │
+│   ├── core/                       # Socle technique partagé
+│   │   ├── __init__.py
+│   │   ├── settings.py             # Variables d'env (dataclass typée)
+│   │   ├── logger.py               # Factory de logger centralisé
+│   │   ├── utils.py                # Nettoyage texte + résumé LLM/extractif
+│   │   └── scoring.py              # Calcul des scores de priorité
+│   │
+│   ├── agents/                     # Agents de collecte de données
+│   │   ├── __init__.py
+│   │   ├── techwatch.py            # PubMed · ArXiv · Scholar · ClinicalTrials
+│   │   ├── marketwatch.py          # Veille concurrentielle
+│   │   ├── publicwatch.py          # Marchés publics (BOAMP)
+│   │   └── regulatory.py           # FDA · CE/MDR · HAS · ANSM · IMDRF
+│   │
+│   ├── reporting/                  # Génération du rapport PDF
+│   │   ├── __init__.py
+│   │   ├── pdf_helpers.py          # Primitives FPDF (blocs, couleurs, titres)
+│   │   └── pdf_builder.py          # Assemblage du rapport complet (5 sections)
+│   │
+│   └── notifications/              # Envoi des rapports
+│       ├── __init__.py
+│       ├── email_sender.py         # Envoi SMTP avec PDF en pièce jointe
+│       └── slack_sender.py         # Upload Slack
+│
+├── tests/                          # Tests unitaires
+│   ├── __init__.py
+│   └── test_scoring.py
+│
+├── data/          → outputs/exports/   # CSVs générés par les agents
+├── logs/                               # Logs horodatés
+└── outputs/
+    ├── reports/                        # Rapports PDF générés
+    └── exports/                        # Exports CSV par source
 ```
 
-### 2. Créer un environnement virtuel :
-```bash
-python -m venv .venv
-# Windows
-.venv\Scripts\activate
-# Mac/Linux
-source .venv/bin/activate
-```
+---
 
-### 3. Installer les dépendances :
+## Installation
+
 ```bash
 pip install -r requirements.txt
+cp .env.example .env
+# Éditer .env avec vos identifiants
 ```
 
-## Configuration .env
+## Usage
 
-Créer un fichier .env à partir de .env.example et remplir vos informations :
 ```bash
-copy .env.example .env  # Windows
-cp .env.example .env    # Linux/Mac
-```
-Remplir les valeurs réelles : email, mot de passe App Gmail, token Slack, chemin du modèle GPT4All.
+# Lancement immédiat
+python main.py --now
 
-## Installation du modèle GPT4All local
+# Mode scheduler (selon SCHEDULE_DAY / SCHEDULE_TIME dans .env)
+python main.py
 
-Le projet utilise le modèle **GPT4All 13B Snoozy** pour résumer automatiquement les publications. 
-Voici comment l’obtenir et l’intégrer :
-
-### 1. Télécharger le modèle
-
-- Option 1 : **Téléchargement direct** depuis le site officiel :  
-  🔗 [ggml-gpt4all-l13b-snoozy.bin](https://gpt4all.io/models/ggml-gpt4all-l13b-snoozy.bin)  
-
-- Option 2 : **Via GPT4All Desktop**  
-  1. Installer GPT4All Desktop ([docs.gpt4all.io](https://docs.gpt4all.io/gpt4all_desktop/quickstart.html))  
-  2. Dans l’interface, sélectionner le modèle **GPT4All‑13B Snoozy** et télécharger  
-  3. Le fichier `.bin` sera ajouté sur ton PC  
-
-> ⚠️ Le modèle pèse plusieurs gigaoctets (~7 Go), prévois un téléchargement long.
-
-### 2. Placer le modèle
-
-- Exemple sur Windows :  
-```bash
-C:\Users\ton_nom\Documents\Models\ggml-gpt4all-l13b-snoozy.bin
-```
-- Exemple sur Mac/Linux :
-```bash
-/Users/ton_nom/Documents/Models/ggml-gpt4all-l13b-snoozy.bin
+# Tests unitaires
+pytest tests/ -v
 ```
 
-## Utilisation
+---
 
-Lancer le script principal :
-```bash
-python veille.py
+## Variables d'environnement
+
+| Variable        | Défaut              | Description                    |
+|-----------------|---------------------|--------------------------------|
+| SMTP_EMAIL      | —                   | Adresse expéditeur             |
+| SMTP_PASSWORD   | —                   | Mot de passe SMTP              |
+| SMTP_SERVER     | smtp.gmail.com      | Serveur SMTP                   |
+| SMTP_PORT       | 587                 | Port SMTP                      |
+| EMAIL_RECEIVER  | —                   | Destinataire du rapport        |
+| SLACK_TOKEN     | —                   | Token bot Slack (optionnel)    |
+| SLACK_CHANNEL   | #general            | Canal Slack cible              |
+| SCHEDULE_DAY    | monday              | Jour de lancement automatique  |
+| SCHEDULE_TIME   | 09:00               | Heure de lancement automatique |
+| GPT4ALL_MODEL   | —                   | Modèle GPT4All (optionnel)     |
+| GPT4ALL_PATH    | —                   | Chemin vers le modèle          |
+
+---
+
+## Dépendances entre modules
+
 ```
-- Génère un PDF dans historique_reports/
-- Envoie le PDF par email et Slack
-- Scheduler hebdo (lundi 9h)
-
-## Sécurité
-
-- .env contient toutes les informations sensibles
-
-- .gitignore protège ces fichiers et les fichiers temporaires
-
-- GPT4All fonctionne 100% local
-
-## 📬 Contact
-
-Pour toute question, suggestion ou contribution :
-
-- 📧 matthieu.graziani007@gmail.com
-- 🌐 www.linkedin.com/in/matthieu-graziani-4190b526b 
+main.py
+ ├── src/core/settings.py    ← singleton partagé par tous
+ ├── src/core/logger.py      ← factory de logger
+ ├── src/agents/             ← utilisent core/ + config/
+ ├── src/reporting/          ← utilise core/ + config/
+ └── src/notifications/      ← utilise core/settings uniquement
+```

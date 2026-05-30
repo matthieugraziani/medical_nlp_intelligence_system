@@ -1,7 +1,8 @@
-feedparser==6.0.10
-schedule==1.2.0
-pandas==2.1.0
-fpdf==1.7.2
-slack_sdk==3.23.0
-gpt4all==1.1.6
-python-dotenv==1.0.1
+feedparser>=6.0
+fpdf>=1.7
+pandas>=2.0
+python-dotenv>=1.0
+schedule>=1.2
+slack-sdk>=3.0        # optionnel — alertes Slack
+gpt4all>=2.0          # optionnel — résumé LLM local
+pytest>=8.0           # développement / tests
